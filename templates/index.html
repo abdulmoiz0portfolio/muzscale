@@ -1,274 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MuzScale - AI Image Upscaler</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .container {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 600px;
-            width: 100%;
-        }
-        
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 10px;
-            font-size: 2.5em;
-        }
-        
-        .subtitle {
-            color: #666;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
-        
-        .upload-area {
-            border: 3px dashed #667eea;
-            border-radius: 10px;
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: #f8f9ff;
-        }
-        
-        .upload-area:hover {
-            border-color: #764ba2;
-            background: #f0f1ff;
-        }
-        
-        .upload-area.dragging {
-            border-color: #764ba2;
-            background: #e8e9ff;
-        }
-        
-        .upload-icon {
-            font-size: 4em;
-            color: #667eea;
-            margin-bottom: 20px;
-        }
-        
-        .upload-text {
-            color: #666;
-            font-size: 1.1em;
-            margin-bottom: 10px;
-        }
-        
-        .file-input {
-            display: none;
-        }
-        
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 25px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: transform 0.2s;
-            margin-top: 20px;
-            width: 100%;
-            font-weight: bold;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-        }
-        
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .preview {
-            margin-top: 20px;
-            text-align: center;
-        }
-        
-        .preview img {
-            max-width: 100%;
-            border-radius: 10px;
-            margin-top: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-        
-        .status {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: bold;
-        }
-        
-        .status.success {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .status.error {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        .status.processing {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-        
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MuzScale — Dark Image Editor & Upscaler</title>
+  <link rel="stylesheet" href="/static/css/styles.css" />
 </head>
 <body>
-    <div class="container">
-        <h1>🎨 MuzScale</h1>
-        <p class="subtitle">AI-Powered Image Upscaling</p>
-        
-        <div class="upload-area" id="uploadArea">
-            <div class="upload-icon">📤</div>
-            <p class="upload-text">Click or drag & drop your image here</p>
-            <p style="color: #999; font-size: 0.9em;">Supported: PNG, JPG, JPEG, WEBP (Max 16MB)</p>
-            <input type="file" id="fileInput" class="file-input" accept="image/*">
-        </div>
-        
-        <button class="btn" id="upscaleBtn" disabled>Upscale Image</button>
-        
-        <div id="status"></div>
-        
-        <div id="preview" class="preview"></div>
+  <header>
+    <div class="logo" title="MuzScale">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2l3 7h7l-5.5 4 2.5 7-7-4.5L5 20l2.5-7L2 9h7l3-7z" stroke="currentColor" stroke-width="1.2"/>
+      </svg>
+      MuzScale
     </div>
-    
-    <script>
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const upscaleBtn = document.getElementById('upscaleBtn');
-        const statusDiv = document.getElementById('status');
-        const previewDiv = document.getElementById('preview');
-        let selectedFile = null;
-        
-        // Click to upload
-        uploadArea.addEventListener('click', () => fileInput.click());
-        
-        // File selection
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                handleFile(file);
-            }
-        });
-        
-        // Drag and drop
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragging');
-        });
-        
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragging');
-        });
-        
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragging');
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                handleFile(file);
-            }
-        });
-        
-        function handleFile(file) {
-            selectedFile = file;
-            upscaleBtn.disabled = false;
-            
-            // Show preview
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                previewDiv.innerHTML = `
-                    <h3>Original Image:</h3>
-                    <img src="${e.target.result}" alt="Preview">
-                    <p>File: ${file.name} (${(file.size / 1024).toFixed(2)} KB)</p>
-                `;
-            };
-            reader.readAsDataURL(file);
-            
-            statusDiv.innerHTML = '';
-        }
-        
-        // Upscale button
-        upscaleBtn.addEventListener('click', async () => {
-            if (!selectedFile) return;
-            
-            upscaleBtn.disabled = true;
-            statusDiv.innerHTML = '<div class="status processing"><div class="loader"></div>Processing your image... This may take a moment.</div>';
-            
-            const formData = new FormData();
-            formData.append('image', selectedFile);
-            
-            try {
-                const response = await fetch('/upscale', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    statusDiv.innerHTML = '<div class="status success">✅ Image upscaled successfully!</div>';
-                    
-                    // Show download button
-                    const downloadBtn = document.createElement('a');
-                    downloadBtn.href = `/download/${data.output_filename}`;
-                    downloadBtn.className = 'btn';
-                    downloadBtn.textContent = '⬇️ Download Upscaled Image';
-                    downloadBtn.style.display = 'inline-block';
-                    downloadBtn.style.textDecoration = 'none';
-                    downloadBtn.style.marginTop = '10px';
-                    statusDiv.appendChild(downloadBtn);
-                } else {
-                    statusDiv.innerHTML = `<div class="status error">❌ Error: ${data.error}</div>`;
-                    upscaleBtn.disabled = false;
-                }
-            } catch (error) {
-                statusDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
-                upscaleBtn.disabled = false;
-            }
-        });
-    </script>
+    <div style="opacity:.7">AI Upscaler & Editor</div>
+  </header>
+
+  <main class="container">
+    <!-- Tools Sidebar -->
+    <aside class="sidebar">
+      <h2>Tools</h2>
+      <div class="tool-group">
+        <button id="flipH" class="tool-btn" title="Flip Horizontal">
+          <svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 5h8v14H3V5m10 0h8v14h-8V5Z"/></svg>
+          Flip Horizontal
+        </button>
+        <button id="flipV" class="tool-btn" title="Flip Vertical">
+          <svg viewBox="0 0 24 24"><path fill="currentColor" d="M5 3h14v8H5V3m0 10h14v8H5v-8Z"/></svg>
+          Flip Vertical
+        </button>
+      </div>
+
+      <div class="tool-group">
+        <button id="resetBtn" class="tool-btn" title="Reset">
+          <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 6V3L8 7l4 4V8a4 4 0 1 1-4 4H6a6 6 0 1 0 6-6Z"/></svg>
+          Reset
+        </button>
+        <button id="downloadBtn" class="tool-btn" title="Download PNG">
+          <svg viewBox="0 0 24 24"><path fill="currentColor" d="M5 20h14v-2H5v2m7-16-5 5h3v4h4v-4h3l-5-5Z"/></svg>
+          Download
+        </button>
+      </div>
+
+      <div class="tool-group">
+        <h2>Filters</h2>
+        <div class="property">
+          <div class="value-display"><label for="brightness">Brightness</label><span class="val">100</span></div>
+          <input id="brightness" type="range" min="0" max="200" value="100" />
+        </div>
+        <div class="property">
+          <div class="value-display"><label for="contrast">Contrast</label><span class="val">100</span></div>
+          <input id="contrast" type="range" min="0" max="200" value="100" />
+        </div>
+        <div class="property">
+          <div class="value-display"><label for="saturation">Saturation</label><span class="val">100</span></div>
+          <input id="saturation" type="range" min="0" max="300" value="100" />
+        </div>
+        <div class="property">
+          <div class="value-display"><label for="blur">Blur</label><span class="val">0</span></div>
+          <input id="blur" type="range" min="0" max="10" value="0" />
+        </div>
+        <div class="property">
+          <div class="value-display"><label for="grayscale">Grayscale</label><span class="val">0</span></div>
+          <input id="grayscale" type="range" min="0" max="100" value="0" />
+        </div>
+        <div class="property">
+          <div class="value-display"><label for="sepia">Sepia</label><span class="val">0</span></div>
+          <input id="sepia" type="range" min="0" max="100" value="0" />
+        </div>
+      </div>
+    </aside>
+
+    <!-- Canvas Area -->
+    <section class="canvas-area">
+      <div class="toolbar">
+        <button id="upscaleBtn" class="toolbar-btn primary">Upscale</button>
+        <div id="upscaleLoading" class="loading"><div class="spinner"></div><div>Upscaling...</div></div>
+        <div style="flex:1"></div>
+        <div class="property" style="display:flex;gap:1rem;align-items:center;">
+          <label for="rotate">Rotate</label>
+          <input id="rotate" type="range" min="-180" max="180" value="0" style="width:180px" />
+        </div>
+        <div class="property" style="display:flex;gap:1rem;align-items:center;">
+          <label for="scale">Zoom</label>
+          <input id="scale" type="range" min="0.2" max="3" step="0.05" value="1" style="width:180px" />
+        </div>
+      </div>
+
+      <div class="canvas-wrapper">
+        <div id="uploadArea" class="upload-area">
+          <svg class="upload-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 15v4H5v-4H3v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-2M11 16h2V8h3l-4-4-4 4h3v8Z"/></svg>
+          <div class="upload-text">
+            <h3>Drag & drop an image</h3>
+            <p>or click to browse. PNG, JPG, WEBP supported.</p>
+          </div>
+          <button class="upload-btn" type="button">Choose Image</button>
+          <input id="fileInput" type="file" accept="image/*" />
+        </div>
+
+        <div class="canvas-container">
+          <canvas id="canvas"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Properties Panel (future extensibility) -->
+    <aside class="properties">
+      <h2>Presets</h2>
+      <div class="filters-grid">
+        <button class="filter-btn" onclick="document.getElementById('grayscale').value=100;document.getElementById('grayscale').dispatchEvent(new Event('input'))">Grayscale</button>
+        <button class="filter-btn" onclick="document.getElementById('sepia').value=60;document.getElementById('sepia').dispatchEvent(new Event('input'))">Vintage</button>
+        <button class="filter-btn" onclick="document.getElementById('contrast').value=130;document.getElementById('contrast').dispatchEvent(new Event('input'))">High Contrast</button>
+        <button class="filter-btn" onclick="document.getElementById('saturation').value=160;document.getElementById('saturation').dispatchEvent(new Event('input'))">Vivid</button>
+      </div>
+    </aside>
+  </main>
+
+  <div id="toast-root"></div>
+  <script src="/static/js/app.js"></script>
 </body>
 </html>
