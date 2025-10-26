@@ -1,130 +1,184 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MuzScale - AI Image Upscaler</title>
-    <link rel="stylesheet" href="./static/css/styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MuzScale — AI Image Upscaler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="https://fav.farm/🖼️" />
+  <style>
+    :root{ --bg:#0b0f14; --panel:#111723; --panel-2:#0e1420; --text:#e6edf3; --muted:#9fb0c3; --brand:#7aa2f7; --brand-2:#5b8ff0; --accent:#a6da95; --danger:#f7768e; --border:#1b2433; --chip:#1a2231; --shadow:0 10px 30px rgba(0,0,0,.35);} *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,Helvetica,sans-serif; color:var(--text); background:radial-gradient(1200px 800px at 75% -10%, #142034 0%, #0b0f14 60%) fixed, var(--bg);} a{color:var(--brand); text-decoration:none}
+    .app{display:flex; flex-direction:column; min-height:100vh}
+    header.appbar{position:sticky; top:0; z-index:10; backdrop-filter:saturate(120%) blur(6px); background:rgba(17,23,35,.85); border-bottom:1px solid var(--border)}
+    .appbar .inner{max-width:1200px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; gap:14px}
+    .logo{display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.2px}
+    .logo .mark{width:28px; height:28px; display:grid; place-items:center; border-radius:8px; background:linear-gradient(135deg, var(--brand), var(--accent)); box-shadow:var(--shadow)} .logo span{font-size:18px}
+    .tag{color:var(--muted); font-weight:500; margin-left:auto}
+    main{flex:1}
+    .container{max-width:1200px; margin:0 auto; padding:24px; display:grid; grid-template-columns: 280px 1fr 320px; gap:18px}
+    @media (max-width: 1100px){ .container{grid-template-columns: 1fr; gap:16px} }
+    .panel{background:linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow)} .panel h3{margin:0 0 10px 0; font-size:14px; letter-spacing:.3px; color:var(--muted)} .panel .body{padding:16px}
+    .tools{display:flex; flex-direction:column; gap:10px}
+    .tool-row{display:flex; gap:10px; flex-wrap:wrap}
+    .btn{appearance:none; border:1px solid var(--border); color:var(--text); background:var(--chip); padding:10px 12px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; font-weight:600; transition:.15s transform, .15s background, .15s border-color}
+    .btn:hover{transform:translateY(-1px); border-color:#2a3750}
+    .btn:disabled{opacity:.5; cursor:not-allowed}
+    .btn.primary{background:linear-gradient(180deg, var(--brand), var(--brand-2)); border-color:#3c6bd9}
+    .btn.success{background:linear-gradient(180deg, #79d08b, var(--accent)); color:#08140c; border-color:#6bc680}
+    .btn.icon{width:42px; justify-content:center}
+    .btn .tip{color:var(--muted); font-weight:500}
+    .workbench{position:relative; min-height:420px; display:grid; place-items:center; overflow:hidden}
+    .dropzone{border:1.5px dashed #2a3750; background:rgba(20,28,42,.35); color:var(--muted); padding:42px 18px; border-radius:14px; text-align:center; width:min(720px, 100%); cursor:pointer}
+    .dropzone .big{font-size:48px; margin-bottom:6px}
+    .preview-wrap{width:100%; height:100%; display:none; position:relative}
+    canvas#canvas{max-width:100%; max-height:70vh; border-radius:10px; background:#0a0f17}
+    .toolbar{position:absolute; bottom:14px; left:50%; transform:translateX(-50%); display:flex; gap:8px; background:rgba(15,21,33,.7); border:1px solid var(--border); padding:8px; border-radius:12px; backdrop-filter:blur(6px); box-shadow:var(--shadow)}
+    .props{display:flex; flex-direction:column; gap:18px}
+    .field{display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px}
+    .field label{color:var(--muted); font-size:13px}
+    .field input[type=range]{width:100%}
+    .chips{display:flex; flex-wrap:wrap; gap:8px}
+    .footer{max-width:1200px; margin:0 auto; padding:18px 24px; color:var(--muted); border-top:1px solid var(--border)}
+    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:#0c1422; border:1px solid var(--border); padding:0 6px; border-radius:6px}
+  </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Header -->
-        <header class="header">
-            <div class="logo">
-                <h1>MuzScale</h1>
-                <span class="tagline">AI Image Upscaler</span>
+  <div class="app">
+    <header class="appbar"><div class="inner"><div class="logo" aria-label="MuzScale logo"><div class="mark">🖼️</div><span>MuzScale</span></div><span class="tag">AI Image Upscaler</span></div></header>
+    <main>
+      <div class="container">
+        <aside class="panel"><div class="body tools" aria-label="Quick tools">
+          <h3>Tools</h3>
+          <div class="tool-row">
+            <button id="flipHBtn" class="btn" title="Flip image horizontally"><span>↔</span><span class="tip">Flip H</span></button>
+            <button id="flipVBtn" class="btn" title="Flip image vertically"><span>↕</span><span class="tip">Flip V</span></button>
+            <button id="rotateLeftBtn" class="btn icon" title="Rotate left">↶</button>
+            <button id="rotateRightBtn" class="btn icon" title="Rotate right">↷</button>
+            <button id="resetBtn" class="btn" title="Reset all edits">↺ <span class="tip">Reset</span></button>
+          </div>
+          <div class="tool-row">
+            <button id="zoomInBtn" class="btn icon" title="Zoom in">+</button>
+            <button id="zoomOutBtn" class="btn icon" title="Zoom out">-</button>
+            <button id="fitBtn" class="btn" title="Fit to screen">⊡ <span class="tip">Fit</span></button>
+            <button id="downloadBtn" class="btn" title="Download image" disabled>↓ <span class="tip">Download</span></button>
+          </div>
+        </div></aside>
+        <section class="panel workbench" aria-live="polite">
+          <input id="imageInput" type="file" accept="image/*" hidden />
+          <label id="uploadArea" class="dropzone" for="imageInput">
+            <div class="big">📁</div>
+            <div>Drag & drop image here</div>
+            <div>or click to browse</div>
+          </label>
+          <div id="canvasContainer" class="preview-wrap" role="region" aria-label="Image preview" style="display:none;">
+            <canvas id="canvas"></canvas>
+            <div class="toolbar" role="toolbar" aria-label="Edit toolbar">
+              <button class="btn icon" id="tbRotateLeft" title="Rotate left">↶</button>
+              <button class="btn icon" id="tbRotateRight" title="Rotate right">↷</button>
+              <button class="btn icon" id="tbZoomIn" title="Zoom in">+</button>
+              <button class="btn icon" id="tbZoomOut" title="Zoom out">-</button>
+              <button class="btn icon" id="tbFit" title="Fit to screen">⊡</button>
             </div>
-        </header>
+          </div>
+          <div id="upscaleSection" style="display:none; margin-top:10px;">
+            <button id="upscaleBtn" class="btn primary" title="Upscale with AI">⚡ Upscale Image</button>
+            <span id="loadingSpinner" style="display:none; margin-left:10px; color:var(--muted)">Processing…</span>
+          </div>
+        </section>
+        <aside class="panel"><div class="body props">
+          <h3>Adjustments</h3>
+          <div class="field"><label for="brightness">Brightness</label><span id="brightnessValue">100%</span><input id="brightness" type="range" min="0" max="200" value="100" /></div>
+          <div class="field"><label for="contrast">Contrast</label><span id="contrastValue">100%</span><input id="contrast" type="range" min="0" max="200" value="100" /></div>
+          <div class="field"><label for="saturation">Saturation</label><span id="saturationValue">100%</span><input id="saturation" type="range" min="0" max="200" value="100" /></div>
+          <div class="field"><label for="blur">Blur</label><span id="blurValue">0px</span><input id="blur" type="range" min="0" max="10" step="0.1" value="0" /></div>
+          <div class="field"><label for="grayscale">Grayscale</label><span id="grayscaleValue">0%</span><input id="grayscale" type="range" min="0" max="100" value="0" /></div>
+          <div class="field"><label for="sepia">Sepia</label><span id="sepiaValue">0%</span><input id="sepia" type="range" min="0" max="100" value="0" /></div>
+          <h3>Presets</h3>
+          <div class="chips">
+            <button class="btn" data-preset="normal">Normal</button>
+            <button class="btn" data-preset="vivid">Vivid</button>
+            <button class="btn" data-preset="vintage">Vintage</button>
+            <button class="btn" data-preset="dramatic">Dramatic</button>
+          </div>
+        </div></aside>
+      </div>
+    </main>
+    <footer class="footer">Tip: Press <span class="kbd">Space</span> to toggle fit, <span class="kbd">R</span> to reset.</footer>
+  </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Left Sidebar - Tools -->
-            <aside class="sidebar left-sidebar">
-                <h2>Tools</h2>
-                <div class="tool-section">
-                    <button class="tool-btn" id="flipHBtn" title="Flip Horizontal">
-                        <span>↔</span> Flip H
-                    </button>
-                    <button class="tool-btn" id="flipVBtn" title="Flip Vertical">
-                        <span>↕</span> Flip V
-                    </button>
-                    <button class="tool-btn" id="resetBtn" title="Reset All">
-                        <span>↺</span> Reset
-                    </button>
-                    <button class="tool-btn" id="downloadBtn" title="Download" disabled>
-                        <span>↓</span> Download
-                    </button>
-                </div>
-            </aside>
+  <script>
+    const qs = (s, el=document) => el.querySelector(s);
+    const uploadArea = qs('#uploadArea');
+    const imageInput = qs('#imageInput');
+    const canvas = qs('#canvas');
+    const ctx = canvas.getContext('2d');
+    const canvasContainer = qs('#canvasContainer');
+    const upscaleSection = qs('#upscaleSection');
+    const upscaleBtn = qs('#upscaleBtn');
+    const spinner = qs('#loadingSpinner');
+    const flipHBtn = qs('#flipHBtn');
+    const flipVBtn = qs('#flipVBtn');
+    const rotateLeftBtn = qs('#rotateLeftBtn');
+    const rotateRightBtn = qs('#rotateRightBtn');
+    const zoomInBtn = qs('#zoomInBtn');
+    const zoomOutBtn = qs('#zoomOutBtn');
+    const fitBtn = qs('#fitBtn');
+    const dlBtn = qs('#downloadBtn');
+    const tbRotateLeft = qs('#tbRotateLeft');
+    const tbRotateRight = qs('#tbRotateRight');
+    const tbZoomIn = qs('#tbZoomIn');
+    const tbZoomOut = qs('#tbZoomOut');
+    const tbFit = qs('#tbFit');
+    const brightness = qs('#brightness');
+    const contrast = qs('#contrast');
+    const saturation = qs('#saturation');
+    const blur = qs('#blur');
+    const grayscale = qs('#grayscale');
+    const sepia = qs('#sepia');
+    const bVal = qs('#brightnessValue');
+    const cVal = qs('#contrastValue');
+    const sVal = qs('#saturationValue');
+    const blVal = qs('#blurValue');
+    const gVal = qs('#grayscaleValue');
+    const spVal = qs('#sepiaValue');
 
-            <!-- Canvas Area -->
-            <div class="canvas-area">
-                <!-- Upload Area -->
-                <div class="upload-area" id="uploadArea">
-                    <div class="upload-icon">📁</div>
-                    <h3>Drop your image here</h3>
-                    <p>or click to browse</p>
-                    <input type="file" id="imageInput" accept="image/*" hidden>
-                </div>
+    let img = null; let scale = 1; let rotation = 0; let flipX = 0; let flipY = 0;
 
-                <!-- Canvas Container -->
-                <div class="canvas-container" id="canvasContainer" style="display: none;">
-                    <canvas id="canvas"></canvas>
-                    <div class="canvas-toolbar">
-                        <button class="toolbar-btn" id="rotateLeftBtn" title="Rotate Left">↶</button>
-                        <button class="toolbar-btn" id="rotateRightBtn" title="Rotate Right">↷</button>
-                        <button class="toolbar-btn" id="zoomInBtn" title="Zoom In">+</button>
-                        <button class="toolbar-btn" id="zoomOutBtn" title="Zoom Out">-</button>
-                        <button class="toolbar-btn" id="fitBtn" title="Fit to View">⊡</button>
-                    </div>
-                </div>
+    function setCanvasSize(w,h){
+      const maxW = Math.min(window.innerWidth - 100, 1000);
+      const maxH = Math.min(window.innerHeight - 240, 700);
+      const ratio = Math.min(maxW / w, maxH / h, 1) * scale;
+      canvas.width = Math.max(1, Math.floor(w * ratio));
+      canvas.height = Math.max(1, Math.floor(h * ratio));
+    }
+    function filterString(){
+      return `brightness(${brightness.value}%) contrast(${contrast.value}%) saturate(${saturation.value}%) blur(${blur.value}px) grayscale(${grayscale.value}%) sepia(${sepia.value}%)`;
+    }
+    function draw(){
+      if(!img) return; canvas.style.filter = filterString();
+      const cx = canvas.width/2, cy = canvas.height/2; ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(rotation); ctx.scale(flipX%2?-1:1, flipY%2?-1:1);
+      const ratio = Math.min(canvas.width/img.width, canvas.height/img.height);
+      const w = img.width*ratio, h = img.height*ratio; ctx.drawImage(img, -w/2, -h/2, w, h); ctx.restore();
+    }
+    function fit(){ if(!img) return; scale = 1; setCanvasSize(img.width, img.height); draw(); }
+    function enableUI(){ canvasContainer.style.display='block'; uploadArea.style.display='none'; upscaleSection.style.display='block'; dlBtn.disabled=false; }
 
-                <!-- Upscale Button -->
-                <div class="upscale-section" id="upscaleSection" style="display: none;">
-                    <button class="upscale-btn" id="upscaleBtn">
-                        <span>⚡</span> Upscale Image
-                    </button>
-                    <div class="loading-spinner" id="loadingSpinner" style="display: none;">
-                        <div class="spinner"></div>
-                        <p>Processing...</p>
-                    </div>
-                </div>
-            </div>
+    uploadArea.addEventListener('dragover', e=>{ e.preventDefault(); uploadArea.style.borderColor = '#3c6bd9'; });
+    uploadArea.addEventListener('dragleave', e=>{ uploadArea.style.borderColor = '#2a3750'; });
+    uploadArea.addEventListener('drop', e=>{ e.preventDefault(); const file = e.dataTransfer.files[0]; if(file) loadFile(file); });
+    imageInput.addEventListener('change', e=>{ const file = e.target.files[0]; if(file) loadFile(file); });
 
-            <!-- Right Sidebar - Properties -->
-            <aside class="sidebar right-sidebar">
-                <h2>Properties</h2>
-                
-                <!-- Filters -->
-                <div class="properties-section">
-                    <h3>Filters</h3>
-                    <div class="filter-item">
-                        <label for="brightness">Brightness</label>
-                        <input type="range" id="brightness" min="0" max="200" value="100">
-                        <span id="brightnessValue">100%</span>
-                    </div>
-                    <div class="filter-item">
-                        <label for="contrast">Contrast</label>
-                        <input type="range" id="contrast" min="0" max="200" value="100">
-                        <span id="contrastValue">100%</span>
-                    </div>
-                    <div class="filter-item">
-                        <label for="saturation">Saturation</label>
-                        <input type="range" id="saturation" min="0" max="200" value="100">
-                        <span id="saturationValue">100%</span>
-                    </div>
-                    <div class="filter-item">
-                        <label for="blur">Blur</label>
-                        <input type="range" id="blur" min="0" max="10" value="0" step="0.1">
-                        <span id="blurValue">0px</span>
-                    </div>
-                    <div class="filter-item">
-                        <label for="grayscale">Grayscale</label>
-                        <input type="range" id="grayscale" min="0" max="100" value="0">
-                        <span id="grayscaleValue">0%</span>
-                    </div>
-                    <div class="filter-item">
-                        <label for="sepia">Sepia</label>
-                        <input type="range" id="sepia" min="0" max="100" value="0">
-                        <span id="sepiaValue">0%</span>
-                    </div>
-                </div>
+    function loadFile(file){
+      const reader = new FileReader();
+      reader.onload = () => { img = new Image(); img.onload = () => { enableUI(); fit(); draw(); }; img.src = reader.result; };
+      reader.readAsDataURL(file);
+    }
 
-                <!-- Presets -->
-                <div class="properties-section">
-                    <h3>Presets</h3>
-                    <button class="preset-btn" data-preset="normal">Normal</button>
-                    <button class="preset-btn" data-preset="vivid">Vivid</button>
-                    <button class="preset-btn" data-preset="vintage">Vintage</button>
-                    <button class="preset-btn" data-preset="dramatic">Dramatic</button>
-                </div>
-            </aside>
-        </div>
-    </div>
-
-    <!-- Toast Notifications -->
-    <div class="toast" id="toast"></div>
-
-    <script src="./static/js/app.js"></script>
-</body>
-</html>
+    function setVal(el, span, suffix){ span.textContent = `${el.value}${suffix}`; draw(); }
+    brightness.addEventListener('input', ()=> setVal(brightness, bVal, '%'));
+    contrast.addEventListener('input', ()=> setVal(contrast, cVal, '%'));
