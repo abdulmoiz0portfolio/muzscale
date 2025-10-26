@@ -1,184 +1,139 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MuzScale — AI Image Upscaler</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="icon" href="https://fav.farm/🖼️" />
-  <style>
-    :root{ --bg:#0b0f14; --panel:#111723; --panel-2:#0e1420; --text:#e6edf3; --muted:#9fb0c3; --brand:#7aa2f7; --brand-2:#5b8ff0; --accent:#a6da95; --danger:#f7768e; --border:#1b2433; --chip:#1a2231; --shadow:0 10px 30px rgba(0,0,0,.35);} *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,Helvetica,sans-serif; color:var(--text); background:radial-gradient(1200px 800px at 75% -10%, #142034 0%, #0b0f14 60%) fixed, var(--bg);} a{color:var(--brand); text-decoration:none}
-    .app{display:flex; flex-direction:column; min-height:100vh}
-    header.appbar{position:sticky; top:0; z-index:10; backdrop-filter:saturate(120%) blur(6px); background:rgba(17,23,35,.85); border-bottom:1px solid var(--border)}
-    .appbar .inner{max-width:1200px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; gap:14px}
-    .logo{display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.2px}
-    .logo .mark{width:28px; height:28px; display:grid; place-items:center; border-radius:8px; background:linear-gradient(135deg, var(--brand), var(--accent)); box-shadow:var(--shadow)} .logo span{font-size:18px}
-    .tag{color:var(--muted); font-weight:500; margin-left:auto}
-    main{flex:1}
-    .container{max-width:1200px; margin:0 auto; padding:24px; display:grid; grid-template-columns: 280px 1fr 320px; gap:18px}
-    @media (max-width: 1100px){ .container{grid-template-columns: 1fr; gap:16px} }
-    .panel{background:linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow)} .panel h3{margin:0 0 10px 0; font-size:14px; letter-spacing:.3px; color:var(--muted)} .panel .body{padding:16px}
-    .tools{display:flex; flex-direction:column; gap:10px}
-    .tool-row{display:flex; gap:10px; flex-wrap:wrap}
-    .btn{appearance:none; border:1px solid var(--border); color:var(--text); background:var(--chip); padding:10px 12px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; font-weight:600; transition:.15s transform, .15s background, .15s border-color}
-    .btn:hover{transform:translateY(-1px); border-color:#2a3750}
-    .btn:disabled{opacity:.5; cursor:not-allowed}
-    .btn.primary{background:linear-gradient(180deg, var(--brand), var(--brand-2)); border-color:#3c6bd9}
-    .btn.success{background:linear-gradient(180deg, #79d08b, var(--accent)); color:#08140c; border-color:#6bc680}
-    .btn.icon{width:42px; justify-content:center}
-    .btn .tip{color:var(--muted); font-weight:500}
-    .workbench{position:relative; min-height:420px; display:grid; place-items:center; overflow:hidden}
-    .dropzone{border:1.5px dashed #2a3750; background:rgba(20,28,42,.35); color:var(--muted); padding:42px 18px; border-radius:14px; text-align:center; width:min(720px, 100%); cursor:pointer}
-    .dropzone .big{font-size:48px; margin-bottom:6px}
-    .preview-wrap{width:100%; height:100%; display:none; position:relative}
-    canvas#canvas{max-width:100%; max-height:70vh; border-radius:10px; background:#0a0f17}
-    .toolbar{position:absolute; bottom:14px; left:50%; transform:translateX(-50%); display:flex; gap:8px; background:rgba(15,21,33,.7); border:1px solid var(--border); padding:8px; border-radius:12px; backdrop-filter:blur(6px); box-shadow:var(--shadow)}
-    .props{display:flex; flex-direction:column; gap:18px}
-    .field{display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px}
-    .field label{color:var(--muted); font-size:13px}
-    .field input[type=range]{width:100%}
-    .chips{display:flex; flex-wrap:wrap; gap:8px}
-    .footer{max-width:1200px; margin:0 auto; padding:18px 24px; color:var(--muted); border-top:1px solid var(--border)}
-    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:#0c1422; border:1px solid var(--border); padding:0 6px; border-radius:6px}
-  </style>
-</head>
-<body>
-  <div class="app">
-    <header class="appbar"><div class="inner"><div class="logo" aria-label="MuzScale logo"><div class="mark">🖼️</div><span>MuzScale</span></div><span class="tag">AI Image Upscaler</span></div></header>
-    <main>
-      <div class="container">
-        <aside class="panel"><div class="body tools" aria-label="Quick tools">
-          <h3>Tools</h3>
-          <div class="tool-row">
-            <button id="flipHBtn" class="btn" title="Flip image horizontally"><span>↔</span><span class="tip">Flip H</span></button>
-            <button id="flipVBtn" class="btn" title="Flip image vertically"><span>↕</span><span class="tip">Flip V</span></button>
-            <button id="rotateLeftBtn" class="btn icon" title="Rotate left">↶</button>
-            <button id="rotateRightBtn" class="btn icon" title="Rotate right">↷</button>
-            <button id="resetBtn" class="btn" title="Reset all edits">↺ <span class="tip">Reset</span></button>
-          </div>
-          <div class="tool-row">
-            <button id="zoomInBtn" class="btn icon" title="Zoom in">+</button>
-            <button id="zoomOutBtn" class="btn icon" title="Zoom out">-</button>
-            <button id="fitBtn" class="btn" title="Fit to screen">⊡ <span class="tip">Fit</span></button>
-            <button id="downloadBtn" class="btn" title="Download image" disabled>↓ <span class="tip">Download</span></button>
-          </div>
-        </div></aside>
-        <section class="panel workbench" aria-live="polite">
-          <input id="imageInput" type="file" accept="image/*" hidden />
-          <label id="uploadArea" class="dropzone" for="imageInput">
-            <div class="big">📁</div>
-            <div>Drag & drop image here</div>
-            <div>or click to browse</div>
-          </label>
-          <div id="canvasContainer" class="preview-wrap" role="region" aria-label="Image preview" style="display:none;">
-            <canvas id="canvas"></canvas>
-            <div class="toolbar" role="toolbar" aria-label="Edit toolbar">
-              <button class="btn icon" id="tbRotateLeft" title="Rotate left">↶</button>
-              <button class="btn icon" id="tbRotateRight" title="Rotate right">↷</button>
-              <button class="btn icon" id="tbZoomIn" title="Zoom in">+</button>
-              <button class="btn icon" id="tbZoomOut" title="Zoom out">-</button>
-              <button class="btn icon" id="tbFit" title="Fit to screen">⊡</button>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>MuzScale — AI Image Upscaler</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fav.farm/🖼️" rel="icon" />
+    <style>
+      :root{ --bg:#0b0f14; --panel:#111723; --panel-2:#0e1420; --text:#e6edf3; --muted:#9fb0c3; --brand:#7aa2f7; --brand-2:#5b8ff0; --accent:#a6da95; --danger:#f7768e; --border:#1b2433; --chip:#1a2231; --shadow:0 10px 30px rgba(0,0,0,.35);} *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,Helvetica,sans-serif; color:var(--text); background:radial-gradient(1200px 800px at 75% -10%, #142034 0%, #0b0f14 60%) fixed, var(--bg);} a{color:var(--brand); text-decoration:none}
+      .app{display:flex; flex-direction:column; min-height:100vh}
+      header.appbar{position:sticky; top:0; z-index:10; backdrop-filter:saturate(120%) blur(6px); background:rgba(17,23,35,.85); border-bottom:1px solid var(--border)}
+      .appbar .inner{max-width:1200px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; gap:14px}
+      .logo{display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.2px}
+      .logo .mark{width:28px; height:28px; display:grid; place-items:center; border-radius:8px; background:linear-gradient(135deg, var(--brand), var(--accent)); box-shadow:var(--shadow)} .logo span{font-size:18px}
+      .tag{color:var(--muted); font-weight:500; margin-left:auto}
+      main{flex:1}
+      .container{max-width:1200px; margin:0 auto; padding:24px; display:grid; grid-template-columns: 280px 1fr 320px; gap:18px}
+      @media (max-width: 1100px){ .container{grid-template-columns: 1fr; gap:16px} }
+      .panel{background:linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow)} .panel h3{margin:0 0 10px 0; font-size:14px; letter-spacing:.3px; color:var(--muted)} .panel .body{padding:16px}
+      .tools{display:flex; flex-direction:column; gap:10px}
+      .tool-row{display:flex; gap:10px; flex-wrap:wrap}
+      .btn{appearance:none; border:1px solid var(--border); color:var(--text); background:var(--chip); padding:10px 12px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; font-weight:600; transition:.15s transform, .15s background, .15s border-color}
+      .btn:hover{transform:translateY(-1px); border-color:#2a3750}
+      .btn:disabled{opacity:.5; cursor:not-allowed}
+      .btn.primary{background:linear-gradient(180deg, var(--brand), var(--brand-2)); border-color:#3c6bd9}
+      .btn.success{background:linear-gradient(180deg, #79d08b, var(--accent)); color:#08140c; border-color:#6bc680}
+      .btn.icon{width:42px; justify-content:center}
+      .btn .tip{color:var(--muted); font-weight:500}
+      .workbench{position:relative; min-height:420px; display:grid; place-items:center; overflow:hidden}
+      .dropzone{border:1.5px dashed #2a3750; background:rgba(20,28,42,.35); color:var(--muted); padding:42px 18px; border-radius:14px; text-align:center; width:min(720px, 100%); cursor:pointer}
+      .dropzone .big{font-size:48px; margin-bottom:6px}
+      .preview-wrap{width:100%; height:100%; display:none; position:relative}
+      canvas#canvas{max-width:100%; max-height:70vh; border-radius:10px; background:#0a0f17}
+      .toolbar{position:absolute; bottom:14px; left:50%; transform:translateX(-50%); display:flex; gap:8px; background:rgba(15,21,33,.7); border:1px solid var(--border); padding:8px; border-radius:12px; backdrop-filter:blur(6px); box-shadow:var(--shadow)}
+      .props{display:flex; flex-direction:column; gap:18px}
+      .field{display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px}
+      .field label{color:var(--muted); font-size:13px}
+      .field input[type=range]{width:100%}
+      .chips{display:flex; flex-wrap:wrap; gap:8px}
+      .footer{max-width:1200px; margin:0 auto; padding:18px 24px; color:var(--muted); border-top:1px solid var(--border)}
+      .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:#0c1422; border:1px solid var(--border); padding:0 6px; border-radius:6px}
+
+      /* MUZZAINI AI additions */
+      body.muzzaini-active { background:#121212; }
+      .modal-container{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);display:none;justify-content:center;align-items:center;z-index:10000}
+      .modal-form{background:#2d3748;padding:30px;border-radius:15px;width:90%;max-width:500px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+      .modal-form h2{margin-top:0;color:#4c6ef5}
+      .modal-form p{color:#a0aec0;margin-bottom:20px}
+      .modal-input{width:calc(100% - 24px);padding:12px;margin-bottom:15px;border-radius:8px;border:1px solid #4a5568;background:#1a202c;color:#fff;font-size:16px}
+      .modal-submit{width:100%;padding:12px 30px;background:#4c6ef5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:16px}
+      .modal-submit:hover{background:#3b5bdb}
+      .skip-btn{background:#6c757d;margin-top:10px}
+      .skip-btn:hover{background:#5a6268}
+      .loading-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#2d3748,#4a5568);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999;transition:opacity .5s ease-out}
+      .loading-screen.fade-out{opacity:0;pointer-events:none}
+      .loader{width:80px;height:80px;border:4px solid rgba(255,255,255,.1);border-left:4px solid #4c6ef5;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:30px}
+      .loading-text{font-size:1.5rem;margin-bottom:10px;background:linear-gradient(45deg,#4c6ef5,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:600}
+      .loading-subtitle{font-size:1rem;color:#e2e8f0;opacity:.7;animation:pulse 2s ease-in-out infinite}
+      @keyframes pulse{0%,100%{opacity:.7}50%{opacity:1}}
+      .progress-bar{width:200px;height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:20px;overflow:hidden}
+      .progress-fill{height:100%;background:linear-gradient(90deg,#4c6ef5,#ffd700);width:0;border-radius:2px;animation:loadProgress 3s ease-out forwards}
+      @keyframes loadProgress{0%{width:0}25%{width:30%}50%{width:60%}75%{width:85%}100%{width:100%}}
+      .landing-page{display:none;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:linear-gradient(135deg,#2d3748,#4a5568);text-align:center}
+      .landing-title{font-size:4rem;font-weight:700;margin-bottom:20px;background:linear-gradient(45deg,#4c6ef5,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+      .landing-subtitle{font-size:1.5rem;margin-bottom:40px;color:#e2e8f0;opacity:.9}
+      .get-started-btn{padding:15px 40px;font-size:1.2rem;background:linear-gradient(135deg,#4c6ef5,#3b5bdb);border:none;border-radius:50px;color:#fff;cursor:pointer;transition:.3s;box-shadow:0 8px 25px rgba(76,110,245,.4);font-weight:600}
+      .get-started-btn:hover{transform:translateY(-3px);box-shadow:0 12px 35px rgba(76,110,245,.6);background:linear-gradient(135deg,#3b5bdb,#2948c7)}
+      .features-preview{margin-top:60px;display:flex;gap:30px;opacity:.7}
+      .feature-icon{font-size:2rem;padding:15px;background:rgba(255,255,255,.1);border-radius:15px;backdrop-filter:blur(10px)}
+      .app-container{display:none}
+      .back-to-landing{position:fixed;top:20px;left:20px;padding:10px 20px;background:#6c757d;border:none;border-radius:8px;color:#fff;cursor:pointer;z-index:1000;text-decoration:none}
+      .top-bar{padding:15px 20px;display:flex;justify-content:space-between;align-items:center;background:#1a1a1a}
+      .top-bar-btn{padding:10px 20px;background:#4a5568;border:none;border-radius:8px;color:#fff;cursor:pointer;text-decoration:none}
+      .logout-btn{background:#c53030}
+      .chat-wrapper{max-width:800px;margin:20px auto;display:flex;flex-direction:column;border-radius:20px;background:#1e1e1e;box-shadow:0 8px 30px rgba(0,0,0,.5);height:90vh;overflow:hidden}
+      .chat-container{flex:1;padding:15px;overflow-y:auto;background:#2a2a2a}
+      .chat-input{display:flex;gap:10px;padding:12px;background:#1f1f1f}
+      #commandInput{flex:1;border-radius:20px;border:1px solid #444;padding:10px 15px;background:#2d2d2d;color:#fff}
+      .message{display:flex;margin-bottom:12px}
+      .user-message{justify-content:flex-end}
+      .assistant-message{justify-content:flex-start}
+      .message-content{max-width:70%;border-radius:14px;padding:10px 14px}
+      .user-message .message-content{background:#4c6ef5}
+      .assistant-message .message-content{background:#343a40}
+      .image-generator-wrapper{max-width:850px;margin:20px auto;background:#1e1e1e;border-radius:20px;padding:20px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+      #imagePromptInput{width:40%;padding:12px;border-radius:10px;border:1px solid #444;background:#2d2d2d;color:#fff}
+      #imageSizeInput,#imageCountInput{padding:12px;border-radius:10px;border:1px solid #444;background:#2d2d2d;color:#fff}
+      .image-status{background:#1a1a1a;text-align:center;padding:10px;font-size:14px}
+      .spinner{width:20px;height:20px;border:3px solid rgba(255,255,255,.2);border-top-color:#4c6ef5;border-radius:50%;animation:spin 1s linear infinite}
+      @keyframes spin{to{transform:rotate(360deg)}}
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="appbar"><div class="inner"><div aria-label="MuzScale logo" class="logo"><div class="mark">🖼️</div><span>MuzScale</span></div><span class="tag">AI Image Upscaler</span></div></header>
+      <main>
+        <div class="container">
+          <!-- Existing left tools -->
+          <aside class="panel"><div class="body tools">
+            <h3>Tools</h3>
+            <div class="tool-row">
+              <button class="btn" id="flipHBtn" title="Flip image horizontally">↔ <span class="tip">Flip H</span></button>
+              <button class="btn" id="flipVBtn" title="Flip image vertically">↕ <span class="tip">Flip V</span></button>
+              <button class="btn icon" id="rotateLeftBtn" title="Rotate left">↶</button>
+              <button class="btn icon" id="rotateRightBtn" title="Rotate right">↷</button>
+              <button class="btn" id="resetBtn" title="Reset all edits">↺ <span class="tip">Reset</span></button>
             </div>
-          </div>
-          <div id="upscaleSection" style="display:none; margin-top:10px;">
-            <button id="upscaleBtn" class="btn primary" title="Upscale with AI">⚡ Upscale Image</button>
-            <span id="loadingSpinner" style="display:none; margin-left:10px; color:var(--muted)">Processing…</span>
-          </div>
-        </section>
-        <aside class="panel"><div class="body props">
-          <h3>Adjustments</h3>
-          <div class="field"><label for="brightness">Brightness</label><span id="brightnessValue">100%</span><input id="brightness" type="range" min="0" max="200" value="100" /></div>
-          <div class="field"><label for="contrast">Contrast</label><span id="contrastValue">100%</span><input id="contrast" type="range" min="0" max="200" value="100" /></div>
-          <div class="field"><label for="saturation">Saturation</label><span id="saturationValue">100%</span><input id="saturation" type="range" min="0" max="200" value="100" /></div>
-          <div class="field"><label for="blur">Blur</label><span id="blurValue">0px</span><input id="blur" type="range" min="0" max="10" step="0.1" value="0" /></div>
-          <div class="field"><label for="grayscale">Grayscale</label><span id="grayscaleValue">0%</span><input id="grayscale" type="range" min="0" max="100" value="0" /></div>
-          <div class="field"><label for="sepia">Sepia</label><span id="sepiaValue">0%</span><input id="sepia" type="range" min="0" max="100" value="0" /></div>
-          <h3>Presets</h3>
-          <div class="chips">
-            <button class="btn" data-preset="normal">Normal</button>
-            <button class="btn" data-preset="vivid">Vivid</button>
-            <button class="btn" data-preset="vintage">Vintage</button>
-            <button class="btn" data-preset="dramatic">Dramatic</button>
-          </div>
-        </div></aside>
-      </div>
-    </main>
-    <footer class="footer">Tip: Press <span class="kbd">Space</span> to toggle fit, <span class="kbd">R</span> to reset.</footer>
-  </div>
+            <div class="tool-row">
+              <button class="btn icon" id="zoomInBtn" title="Zoom in">+</button>
+              <button class="btn icon" id="zoomOutBtn" title="Zoom out">-</button>
+              <button class="btn" id="fitBtn" title="Fit to screen">⊡ <span class="tip">Fit</span></button>
+              <button class="btn" disabled id="downloadBtn" title="Download image">↓ <span class="tip">Download</span></button>
+            </div>
+          </div></aside>
 
-  <script>
-    const qs = (s, el=document) => el.querySelector(s);
-    const uploadArea = qs('#uploadArea');
-    const imageInput = qs('#imageInput');
-    const canvas = qs('#canvas');
-    const ctx = canvas.getContext('2d');
-    const canvasContainer = qs('#canvasContainer');
-    const upscaleSection = qs('#upscaleSection');
-    const upscaleBtn = qs('#upscaleBtn');
-    const spinner = qs('#loadingSpinner');
-    const flipHBtn = qs('#flipHBtn');
-    const flipVBtn = qs('#flipVBtn');
-    const rotateLeftBtn = qs('#rotateLeftBtn');
-    const rotateRightBtn = qs('#rotateRightBtn');
-    const zoomInBtn = qs('#zoomInBtn');
-    const zoomOutBtn = qs('#zoomOutBtn');
-    const fitBtn = qs('#fitBtn');
-    const dlBtn = qs('#downloadBtn');
-    const tbRotateLeft = qs('#tbRotateLeft');
-    const tbRotateRight = qs('#tbRotateRight');
-    const tbZoomIn = qs('#tbZoomIn');
-    const tbZoomOut = qs('#tbZoomOut');
-    const tbFit = qs('#tbFit');
-    const brightness = qs('#brightness');
-    const contrast = qs('#contrast');
-    const saturation = qs('#saturation');
-    const blur = qs('#blur');
-    const grayscale = qs('#grayscale');
-    const sepia = qs('#sepia');
-    const bVal = qs('#brightnessValue');
-    const cVal = qs('#contrastValue');
-    const sVal = qs('#saturationValue');
-    const blVal = qs('#blurValue');
-    const gVal = qs('#grayscaleValue');
-    const spVal = qs('#sepiaValue');
-
-    let img = null; let scale = 1; let rotation = 0; let flipX = 0; let flipY = 0;
-
-    function setCanvasSize(w,h){
-      const maxW = Math.min(window.innerWidth - 100, 1000);
-      const maxH = Math.min(window.innerHeight - 240, 700);
-      const ratio = Math.min(maxW / w, maxH / h, 1) * scale;
-      canvas.width = Math.max(1, Math.floor(w * ratio));
-      canvas.height = Math.max(1, Math.floor(h * ratio));
-    }
-    function filterString(){
-      return `brightness(${brightness.value}%) contrast(${contrast.value}%) saturate(${saturation.value}%) blur(${blur.value}px) grayscale(${grayscale.value}%) sepia(${sepia.value}%)`;
-    }
-    function draw(){
-      if(!img) return; canvas.style.filter = filterString();
-      const cx = canvas.width/2, cy = canvas.height/2; ctx.clearRect(0,0,canvas.width,canvas.height);
-      ctx.save(); ctx.translate(cx, cy); ctx.rotate(rotation); ctx.scale(flipX%2?-1:1, flipY%2?-1:1);
-      const ratio = Math.min(canvas.width/img.width, canvas.height/img.height);
-      const w = img.width*ratio, h = img.height*ratio; ctx.drawImage(img, -w/2, -h/2, w, h); ctx.restore();
-    }
-    function fit(){ if(!img) return; scale = 1; setCanvasSize(img.width, img.height); draw(); }
-    function enableUI(){ canvasContainer.style.display='block'; uploadArea.style.display='none'; upscaleSection.style.display='block'; dlBtn.disabled=false; }
-
-    uploadArea.addEventListener('dragover', e=>{ e.preventDefault(); uploadArea.style.borderColor = '#3c6bd9'; });
-    uploadArea.addEventListener('dragleave', e=>{ uploadArea.style.borderColor = '#2a3750'; });
-    uploadArea.addEventListener('drop', e=>{ e.preventDefault(); const file = e.dataTransfer.files[0]; if(file) loadFile(file); });
-    imageInput.addEventListener('change', e=>{ const file = e.target.files[0]; if(file) loadFile(file); });
-
-    function loadFile(file){
-      const reader = new FileReader();
-      reader.onload = () => { img = new Image(); img.onload = () => { enableUI(); fit(); draw(); }; img.src = reader.result; };
-      reader.readAsDataURL(file);
-    }
-
-    function setVal(el, span, suffix){ span.textContent = `${el.value}${suffix}`; draw(); }
-    brightness.addEventListener('input', ()=> setVal(brightness, bVal, '%'));
-    contrast.addEventListener('input', ()=> setVal(contrast, cVal, '%'));
+          <!-- Existing center workbench -->
+          <section aria-live="polite" class="panel workbench">
+            <input accept="image/*" hidden id="imageInput" type="file" />
+            <label class="dropzone" for="imageInput" id="uploadArea">
+              <div class="big">📁</div>
+              Drag &amp; drop image here<br/>or click to browse
+            </label>
+            <div aria-label="Image preview" class="preview-wrap" id="canvasContainer" role="region" style="display:none;">
+              <canvas id="canvas"></canvas>
+              <div aria-label="Edit toolbar" class="toolbar" role="toolbar">
+                <button class="btn icon" id="tbRotateLeft" title="Rotate left">↶</button>
+                <button class="btn icon" id="tbRotateRight" title="Rotate right">↷</button>
+                <button class="btn icon" id="tbZoomIn" title="Zoom in">+</button>
+                <button class="btn icon" id="tbZoomOut" title="Zoom out">-</button>
+                <button class="btn icon" id="tbFit" title="Fit to screen">⊡</button>
+              </div>
+            </div>
+            <div id="upscaleSection" style="display:none; margin-top:10px;">
+              <button class="btn
