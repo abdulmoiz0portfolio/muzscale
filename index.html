@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MuzScale - AI Image Upscaler</title>
+    <link rel="stylesheet" href="./static/css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <h1>MuzScale</h1>
+                <span class="tagline">AI Image Upscaler</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Sidebar - Tools -->
+            <aside class="sidebar left-sidebar">
+                <h2>Tools</h2>
+                <div class="tool-section">
+                    <button class="tool-btn" id="flipHBtn" title="Flip Horizontal">
+                        <span>↔</span> Flip H
+                    </button>
+                    <button class="tool-btn" id="flipVBtn" title="Flip Vertical">
+                        <span>↕</span> Flip V
+                    </button>
+                    <button class="tool-btn" id="resetBtn" title="Reset All">
+                        <span>↺</span> Reset
+                    </button>
+                    <button class="tool-btn" id="downloadBtn" title="Download" disabled>
+                        <span>↓</span> Download
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Canvas Area -->
+            <div class="canvas-area">
+                <!-- Upload Area -->
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <h3>Drop your image here</h3>
+                    <p>or click to browse</p>
+                    <input type="file" id="imageInput" accept="image/*" hidden>
+                </div>
+
+                <!-- Canvas Container -->
+                <div class="canvas-container" id="canvasContainer" style="display: none;">
+                    <canvas id="canvas"></canvas>
+                    <div class="canvas-toolbar">
+                        <button class="toolbar-btn" id="rotateLeftBtn" title="Rotate Left">↶</button>
+                        <button class="toolbar-btn" id="rotateRightBtn" title="Rotate Right">↷</button>
+                        <button class="toolbar-btn" id="zoomInBtn" title="Zoom In">+</button>
+                        <button class="toolbar-btn" id="zoomOutBtn" title="Zoom Out">-</button>
+                        <button class="toolbar-btn" id="fitBtn" title="Fit to View">⊡</button>
+                    </div>
+                </div>
+
+                <!-- Upscale Button -->
+                <div class="upscale-section" id="upscaleSection" style="display: none;">
+                    <button class="upscale-btn" id="upscaleBtn">
+                        <span>⚡</span> Upscale Image
+                    </button>
+                    <div class="loading-spinner" id="loadingSpinner" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Processing...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar - Properties -->
+            <aside class="sidebar right-sidebar">
+                <h2>Properties</h2>
+                
+                <!-- Filters -->
+                <div class="properties-section">
+                    <h3>Filters</h3>
+                    <div class="filter-item">
+                        <label for="brightness">Brightness</label>
+                        <input type="range" id="brightness" min="0" max="200" value="100">
+                        <span id="brightnessValue">100%</span>
+                    </div>
+                    <div class="filter-item">
+                        <label for="contrast">Contrast</label>
+                        <input type="range" id="contrast" min="0" max="200" value="100">
+                        <span id="contrastValue">100%</span>
+                    </div>
+                    <div class="filter-item">
+                        <label for="saturation">Saturation</label>
+                        <input type="range" id="saturation" min="0" max="200" value="100">
+                        <span id="saturationValue">100%</span>
+                    </div>
+                    <div class="filter-item">
+                        <label for="blur">Blur</label>
+                        <input type="range" id="blur" min="0" max="10" value="0" step="0.1">
+                        <span id="blurValue">0px</span>
+                    </div>
+                    <div class="filter-item">
+                        <label for="grayscale">Grayscale</label>
+                        <input type="range" id="grayscale" min="0" max="100" value="0">
+                        <span id="grayscaleValue">0%</span>
+                    </div>
+                    <div class="filter-item">
+                        <label for="sepia">Sepia</label>
+                        <input type="range" id="sepia" min="0" max="100" value="0">
+                        <span id="sepiaValue">0%</span>
+                    </div>
+                </div>
+
+                <!-- Presets -->
+                <div class="properties-section">
+                    <h3>Presets</h3>
+                    <button class="preset-btn" data-preset="normal">Normal</button>
+                    <button class="preset-btn" data-preset="vivid">Vivid</button>
+                    <button class="preset-btn" data-preset="vintage">Vintage</button>
+                    <button class="preset-btn" data-preset="dramatic">Dramatic</button>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast" id="toast"></div>
+
+    <script src="./static/js/app.js"></script>
+</body>
+</html>
